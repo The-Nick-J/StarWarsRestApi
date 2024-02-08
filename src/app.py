@@ -38,14 +38,44 @@ def handle_invalid_usage(error):
 def sitemap():
     return generate_sitemap(app)
 
+#ENDPOINTS DE USER
+
 @app.route('/user', methods=['GET'])
-def handle_hello():
-
-    response_body = {
-        "msg": "Hello, this is your GET /user response "
-    }
-
+def get_users():
+    user = User.query.all() # [<Note 1>, <Note 2>]
+    print(user)
+    user = list(map(lambda user: user.serialize(), user))
+    print(user) 
+    return jsonify(user), 200
     return jsonify(response_body), 200
+
+@app.route('/user', methods=["POST"])
+def add_user():
+    data = request.json
+    email = data.get('email')
+    password = data.get('password')
+    is_active = data.get('is_active')
+    planet_favorites = data.get('planet_favorites')
+    people_favorites = data.get('people_favorites')
+    user = User(email=email, password=password, is_active=is_active)
+
+    for planet_id in planet_favorites:
+        planet = Planet.query.get(planet_id)
+        if planet:
+            user.planet_favorites.append(planet)
+
+    for people_id in people_favorites:
+        person = People.query.get(people_id)
+        if person:
+            user.people_favorites.append(person)
+
+
+    db.session.add(user) 
+    db.session.commit()
+
+    return jsonify({"message": "User added successfully"}), 201
+
+
 #ENDPOINTS DE PEOPLE
 @app.route('/people', methods=['GET'])
 def get_people():
